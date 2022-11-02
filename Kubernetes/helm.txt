@@ -53,10 +53,40 @@ kubectl get svc
 
 # Now use the external IP & Nodeport to access the dashboard. When it asked for token, execute following commands to create service account & token
 
-kubectl create serviceaccount dashboard -n default
+#We are creating Service Account with the name admin-user in namespace default first.
 
+# vi ServiceAccount.yaml && past the below command
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: default
+  
+kubectl apply -f ServiceAccount.yaml
+
+#Creating a ClusterRoleBinding
+# vi ClusterRoleBinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: default
+  
+  kubectl apply -f ClusterRoleBinding.yaml
+  
+  # Getting a Bearer Token
+  kubectl -n default create token admin-user
+
+
+********************************************************
 kubectl create clusterrolebinding dashboard-admin -n default --clusterrole=cluster-admin --serviceaccount=default:dashboard
-
 kubectl get secret $(kubectl get serviceaccount dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
 
 https://3.110.167.204:31484/
